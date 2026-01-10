@@ -164,14 +164,27 @@ function handleToggle() {
               target: { tabId: tabs[0].id },
               files: ['content/content.css']
             });
+            // After injection, toggle again
+            setTimeout(() => {
+              chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (res) => {
+                if (res) {
+                  currentState.isEnabled = res.isEnabled;
+                  enableToggle.checked = res.isEnabled;
+                }
+              });
+            }, 100);
           }).catch(err => {
             console.error('Failed to inject content script:', err);
+            // Revert toggle visual on error
+            enableToggle.checked = currentState.isEnabled;
           });
           return;
         }
 
         if (response) {
           currentState.isEnabled = response.isEnabled;
+          // Sync toggle visual with actual state
+          enableToggle.checked = response.isEnabled;
         }
       });
     }
