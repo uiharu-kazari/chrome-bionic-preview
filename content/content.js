@@ -45,6 +45,40 @@
   }
 
   /**
+   * Calculate how many characters to bold based on word length and fixation point
+   * Uses a lookup table approach similar to text-vide library
+   */
+  function getBoldLength(wordLength, fixationPoint) {
+    // Base bold lengths by word length (for fixation point 3)
+    // Short words: bold less, longer words: bold proportionally more but cap it
+    const baseLengths = {
+      1: 1,
+      2: 1,
+      3: 1,
+      4: 2,
+      5: 2,
+      6: 2,
+      7: 3,
+      8: 3,
+      9: 3,
+      10: 3,
+      11: 4,
+      12: 4
+    };
+
+    // Get base length (default to ~30% for very long words)
+    let base = baseLengths[wordLength] || Math.ceil(wordLength * 0.3);
+
+    // Adjust based on fixation point (1-5)
+    // fixation 1: -1 char, fixation 5: +1 char
+    const adjustment = fixationPoint - 3;
+    let boldLen = base + adjustment;
+
+    // Ensure at least 1 char and not more than word length
+    return Math.max(1, Math.min(boldLen, wordLength));
+  }
+
+  /**
    * Apply bionic reading to a word
    */
   function processWord(word, fixationPoint) {
@@ -52,10 +86,12 @@
       return word;
     }
 
-    const boldLength = Math.max(1, Math.min(
-      word.length,
-      Math.ceil(word.length * (fixationPoint / 5))
-    ));
+    // Skip if word is just punctuation
+    if (/^[^\w]+$/.test(word)) {
+      return escapeHtml(word);
+    }
+
+    const boldLength = getBoldLength(word.length, fixationPoint);
 
     const boldPart = word.substring(0, boldLength);
     const dimPart = word.substring(boldLength);
