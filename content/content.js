@@ -46,24 +46,17 @@
 
   /**
    * Calculate how many characters to bold based on word length and fixation point
-   * Mimics the text-vide library algorithm used in the web app
+   * Uses exact text-vide algorithm from https://github.com/Gumball12/text-vide
    *
    * UI fixationPoint: 1-5 (higher = more bold)
-   * text-vide uses inverted: 6 - fixationPoint
-   * Formula: ceil(wordLength / (7 - fixationPoint))
+   * Formula: max(1, floor(wordLength * fixationPoint / 6))
    */
   function getBoldLength(wordLength, fixationPoint) {
     // Minimum 1 character for very short words
     if (wordLength <= 1) return 1;
 
-    // Convert UI fixation (1-5, higher=more bold) to divisor
-    // UI 1 → divisor 6 (least bold)
-    // UI 3 → divisor 4 (medium)
-    // UI 5 → divisor 2 (most bold)
-    const divisor = 7 - fixationPoint;
-
-    // Calculate bold length using text-vide formula
-    const boldLen = Math.ceil(wordLength / divisor);
+    // text-vide formula: max(1, floor(length * fixationPoint / 6))
+    const boldLen = Math.floor(wordLength * fixationPoint / 6);
 
     // Ensure at least 1 and at most word length
     return Math.max(1, Math.min(boldLen, wordLength));
