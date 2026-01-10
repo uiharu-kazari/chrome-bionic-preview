@@ -1,0 +1,232 @@
+/**
+ * Bionic Markdown Preview - Content Styles
+ */
+
+/* CSS Variables */
+:root {
+  --bionic-dim-opacity: 0.5;
+  --gradient-color: inherit;
+}
+
+/* Bionic reading styles */
+.bionic-bold {
+  font-weight: 700;
+}
+
+.bionic-dim {
+  opacity: var(--bionic-dim-opacity);
+}
+
+.bionic-wrapper {
+  /* Preserve whitespace and formatting */
+  white-space: inherit;
+}
+
+/* Gradient text styles */
+.gradient-text {
+  color: var(--gradient-color) !important;
+}
+
+/* Markdown preview container */
+.bionic-markdown-preview {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-preview {
+    background-color: #1a1a2e;
+  }
+}
+
+.bionic-markdown-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.bionic-markdown-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #333;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content {
+    color: #e0e0e0;
+  }
+}
+
+/* Typography */
+.bionic-markdown-content h1,
+.bionic-markdown-content h2,
+.bionic-markdown-content h3,
+.bionic-markdown-content h4,
+.bionic-markdown-content h5,
+.bionic-markdown-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bionic-markdown-content h1 { font-size: 2em; }
+.bionic-markdown-content h2 { font-size: 1.5em; }
+.bionic-markdown-content h3 { font-size: 1.25em; }
+.bionic-markdown-content h4 { font-size: 1em; }
+.bionic-markdown-content h5 { font-size: 0.875em; }
+.bionic-markdown-content h6 { font-size: 0.85em; }
+
+.bionic-markdown-content p {
+  margin: 1em 0;
+}
+
+.bionic-markdown-content a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.bionic-markdown-content a:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content a {
+    color: #66b3ff;
+  }
+}
+
+/* Lists */
+.bionic-markdown-content ul,
+.bionic-markdown-content ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.bionic-markdown-content li {
+  margin: 0.5em 0;
+}
+
+/* Blockquotes */
+.bionic-markdown-content blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content blockquote {
+    border-left-color: #444;
+    background-color: #252540;
+    color: #999;
+  }
+}
+
+/* Code */
+.bionic-markdown-content code {
+  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  background-color: #f5f5f5;
+  border-radius: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content code {
+    background-color: #2d2d44;
+  }
+}
+
+.bionic-markdown-content pre {
+  margin: 1em 0;
+  padding: 1em;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content pre {
+    background-color: #2d2d44;
+  }
+}
+
+.bionic-markdown-content pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+/* Tables */
+.bionic-markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.bionic-markdown-content th,
+.bionic-markdown-content td {
+  padding: 0.75em;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.bionic-markdown-content th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content th,
+  .bionic-markdown-content td {
+    border-color: #444;
+  }
+
+  .bionic-markdown-content th {
+    background-color: #2d2d44;
+  }
+}
+
+/* Horizontal rule */
+.bionic-markdown-content hr {
+  margin: 2em 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bionic-markdown-content hr {
+    border-top-color: #444;
+  }
+}
+
+/* Images */
+.bionic-markdown-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 4px;
+}
+
+/* Strong and emphasis */
+.bionic-markdown-content strong {
+  font-weight: 700;
+}
+
+.bionic-markdown-content em {
+  font-style: italic;
+}
+
+.bionic-markdown-content del {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Smooth transitions */
+.bionic-reading-enabled * {
+  transition: opacity 0.2s ease;
+}
