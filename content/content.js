@@ -46,35 +46,26 @@
 
   /**
    * Calculate how many characters to bold based on word length and fixation point
-   * Uses a lookup table approach similar to text-vide library
+   * Mimics the text-vide library algorithm used in the web app
+   *
+   * UI fixationPoint: 1-5 (higher = more bold)
+   * text-vide uses inverted: 6 - fixationPoint
+   * Formula: ceil(wordLength / (7 - fixationPoint))
    */
   function getBoldLength(wordLength, fixationPoint) {
-    // Base bold lengths by word length (for fixation point 3)
-    // Short words: bold less, longer words: bold proportionally more but cap it
-    const baseLengths = {
-      1: 1,
-      2: 1,
-      3: 1,
-      4: 2,
-      5: 2,
-      6: 2,
-      7: 3,
-      8: 3,
-      9: 3,
-      10: 3,
-      11: 4,
-      12: 4
-    };
+    // Minimum 1 character for very short words
+    if (wordLength <= 1) return 1;
 
-    // Get base length (default to ~30% for very long words)
-    let base = baseLengths[wordLength] || Math.ceil(wordLength * 0.3);
+    // Convert UI fixation (1-5, higher=more bold) to divisor
+    // UI 1 → divisor 6 (least bold)
+    // UI 3 → divisor 4 (medium)
+    // UI 5 → divisor 2 (most bold)
+    const divisor = 7 - fixationPoint;
 
-    // Adjust based on fixation point (1-5)
-    // fixation 1: -1 char, fixation 5: +1 char
-    const adjustment = fixationPoint - 3;
-    let boldLen = base + adjustment;
+    // Calculate bold length using text-vide formula
+    const boldLen = Math.ceil(wordLength / divisor);
 
-    // Ensure at least 1 char and not more than word length
+    // Ensure at least 1 and at most word length
     return Math.max(1, Math.min(boldLen, wordLength));
   }
 
