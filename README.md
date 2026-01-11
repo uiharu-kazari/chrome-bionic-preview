@@ -95,12 +95,18 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 1. Zip all files in the `chrome-bionic-preview` folder
 2. Upload to the Chrome Web Store Developer Dashboard
 
-## Credits
+## Also Available On
 
-Inspired by:
-- [Bionic Reading](https://bionic-reading.com/) concept
-- [bionic-markdown-preview-web](../bionic-markdown-preview-web) - Web application
-- [vscode-bionic-preview](../vscode-bionic-preview) - VS Code extension
+| Platform | Link |
+|----------|------|
+| **Web App** | [bionicmarkdown.com](https://bionicmarkdown.com) |
+| **VS Code** | [Marketplace](https://marketplace.visualstudio.com/items?itemName=BionicMarkdown.bionic-markdown-preview) |
+| **Chrome** | You are here! |
+
+**Source Code:**
+- [Web App](https://github.com/uiharu-kazari/bionic-markdown-preview-web)
+- [VS Code Extension](https://github.com/uiharu-kazari/vscode-bionic-markdown-preview)
+- [Chrome Extension](https://github.com/uiharu-kazari/chrome-bionic-preview)
 
 ## License
 
