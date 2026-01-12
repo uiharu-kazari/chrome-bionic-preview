@@ -108,6 +108,18 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 - [VS Code Extension](https://github.com/uiharu-kazari/vscode-bionic-markdown-preview)
 - [Chrome Extension](https://github.com/uiharu-kazari/chrome-bionic-preview)
 
+## Privacy Policy
+
+**Bionic Markdown Preview does not collect, store, or transmit any personal data.**
+
+- All processing happens locally in your browser
+- User preferences (fixation point, opacity, theme) are stored locally using Chrome's storage API
+- No data is sent to external servers
+- No analytics or tracking
+- No user accounts required
+
+This extension only accesses webpage content when you explicitly enable it, solely to apply the bionic reading transformation.
+
 ## License
 
 MIT License - See LICENSE file for details
