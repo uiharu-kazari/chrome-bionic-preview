@@ -171,6 +171,15 @@ function updateGradientPreview(theme) {
 function handleToggle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
+      const url = tabs[0].url || '';
+
+      // Safety check for restricted URLs
+      if (isRestrictedUrl(url)) {
+        enableToggle.checked = false;
+        enableToggle.disabled = true;
+        return;
+      }
+
       chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (response) => {
         if (chrome.runtime.lastError) {
           // Content script not loaded, inject it first
@@ -192,9 +201,8 @@ function handleToggle() {
               });
             }, 100);
           }).catch(err => {
-            console.error('Failed to inject content script:', err);
-            // Revert toggle visual on error
-            enableToggle.checked = currentState.isEnabled;
+            // Silently fail - likely a restricted page
+            enableToggle.checked = false;
           });
           return;
         }
