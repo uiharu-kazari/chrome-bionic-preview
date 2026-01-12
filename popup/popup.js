@@ -67,11 +67,29 @@ function init() {
 }
 
 /**
+ * Check if URL is restricted
+ */
+function isRestrictedUrl(url) {
+  return url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('edge://');
+}
+
+/**
  * Get current state from content script
  */
 function getCurrentState() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
+      const url = tabs[0].url || '';
+
+      // Check if on restricted page
+      if (isRestrictedUrl(url)) {
+        enableToggle.checked = false;
+        enableToggle.disabled = true;
+        document.querySelector('.footer-text').textContent = 'Not available on this page';
+        loadStoredSettings();
+        return;
+      }
+
       chrome.tabs.sendMessage(tabs[0].id, { type: 'getState' }, (response) => {
         if (chrome.runtime.lastError) {
           // Content script not loaded, use stored settings
@@ -153,14 +171,6 @@ function updateGradientPreview(theme) {
 function handleToggle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
-      // Check if we're on a restricted URL
-      const url = tabs[0].url || '';
-      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:')) {
-        enableToggle.checked = false;
-        alert('Cannot run on this page. Please try on a regular website.');
-        return;
-      }
-
       chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (response) => {
         if (chrome.runtime.lastError) {
           // Content script not loaded, inject it first
