@@ -55,6 +55,9 @@ function init() {
   autoMarkdown = document.getElementById('autoMarkdown');
   markdownIndicator = document.getElementById('markdownIndicator');
 
+  // Disable toggle initially until we confirm the page is accessible
+  enableToggle.disabled = true;
+
   // Add event listeners
   enableToggle.addEventListener('change', handleToggle);
   fixationPoint.addEventListener('input', handleFixationChange);
@@ -70,6 +73,8 @@ function init() {
  * Check if URL is restricted
  */
 function isRestrictedUrl(url) {
+  // Treat empty, undefined, or null URLs as restricted (fail-safe)
+  if (!url) return true;
   return url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('edge://');
 }
 
@@ -79,7 +84,7 @@ function isRestrictedUrl(url) {
 function getCurrentState() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
-      const url = tabs[0].url || '';
+      const url = tabs[0].url;
 
       // Check if on restricted page
       if (isRestrictedUrl(url)) {
@@ -89,6 +94,9 @@ function getCurrentState() {
         loadStoredSettings();
         return;
       }
+
+      // Page is accessible, enable the toggle
+      enableToggle.disabled = false;
 
       chrome.tabs.sendMessage(tabs[0].id, { type: 'getState' }, (response) => {
         if (chrome.runtime.lastError) {
@@ -171,7 +179,7 @@ function updateGradientPreview(theme) {
 function handleToggle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
-      const url = tabs[0].url || '';
+      const url = tabs[0].url;
 
       // Safety check for restricted URLs
       if (isRestrictedUrl(url)) {

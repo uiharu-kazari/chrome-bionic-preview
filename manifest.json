@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Bionic Preview",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Enhanced reading experience with bionic text highlighting and gradient reading for any webpage",
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "tabs"
   ],
   "action": {
     "default_popup": "popup/popup.html",
