@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Bionic Markdown Preview",
+  "name": "Bionic Preview",
   "version": "1.0.0",
-  "description": "Enhanced reading experience with bionic text highlighting and gradient reading for markdown and web pages",
+  "description": "Enhanced reading experience with bionic text highlighting and gradient reading for any webpage",
   "permissions": [
     "activeTab",
     "storage",

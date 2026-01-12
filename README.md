@@ -1,6 +1,6 @@
-# Bionic Markdown Preview
+# Bionic Preview
 
-A Chrome extension that enhances reading experience with bionic text highlighting and gradient reading for markdown and web pages.
+A Chrome extension that enhances reading experience with bionic text highlighting and gradient reading for any webpage.
 
 ## Features
 
@@ -110,7 +110,7 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 
 ## Privacy Policy
 
-**Bionic Markdown Preview does not collect, store, or transmit any personal data.**
+**Bionic Preview does not collect, store, or transmit any personal data.**
 
 - All processing happens locally in your browser
 - User preferences (fixation point, opacity, theme) are stored locally using Chrome's storage API
