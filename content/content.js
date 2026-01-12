@@ -1,6 +1,6 @@
 /**
- * Bionic Markdown Preview - Content Script
- * Handles page transformation with bionic reading and gradient effects
+ * Bionic Preview - Content Script
+ * Handles page transformation with bionic preview and gradient effects
  */
 
 // Import libraries by injecting scripts
@@ -63,7 +63,7 @@
   }
 
   /**
-   * Apply bionic reading to a word
+   * Apply bionic preview to a word
    */
   function processWord(word, fixationPoint) {
     if (!word || word.trim().length === 0) {
@@ -88,7 +88,7 @@
   }
 
   /**
-   * Apply bionic reading to text content
+   * Apply bionic preview to text content
    */
   function processText(text, fixationPoint) {
     if (!text) return '';
@@ -112,7 +112,7 @@
   }
 
   /**
-   * Process an element with bionic reading
+   * Process an element with bionic preview
    */
   function processBionicElement(element, fixationPoint, dimOpacity) {
     const skipTags = ['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'SVG', 'MATH', 'KBD', 'SAMP'];
@@ -168,7 +168,7 @@
   }
 
   /**
-   * Remove bionic reading from an element
+   * Remove bionic preview from an element
    */
   function removeBionicFromElement(element) {
     const wrappers = element.querySelectorAll('.bionic-wrapper');
@@ -483,7 +483,7 @@
   }
 
   /**
-   * Apply bionic reading to the page
+   * Apply bionic preview to the page
    */
   function applyBionicReading() {
     saveOriginalContent();
@@ -496,7 +496,7 @@
     // Get the main content area
     const contentArea = document.querySelector('.bionic-markdown-content') || document.body;
 
-    // Apply bionic reading
+    // Apply bionic preview
     processBionicElement(contentArea, settings.fixationPoint, settings.dimOpacity);
 
     // Apply gradient if set
@@ -508,7 +508,7 @@
   }
 
   /**
-   * Remove bionic reading from the page
+   * Remove bionic preview from the page
    */
   function removeBionicReading() {
     const contentArea = document.querySelector('.bionic-markdown-content') || document.body;
@@ -525,7 +525,7 @@
   }
 
   /**
-   * Toggle bionic reading on/off
+   * Toggle bionic preview on/off
    */
   function toggle() {
     isEnabled = !isEnabled;

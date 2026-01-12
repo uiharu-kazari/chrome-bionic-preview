@@ -4,7 +4,7 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 
 ## Features
 
-### Bionic Reading
+### Bionic Text Highlighting
 - **Bold word beginnings** - Emphasizes the first characters of each word to guide your eye through text faster
 - **Adjustable fixation point** (1-5) - Control how many characters are bolded per word
 - **Dim opacity control** - Adjust the visibility of non-emphasized text
@@ -34,7 +34,7 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 ## Usage
 
 1. **Click the extension icon** to open the settings popup
-2. **Toggle the switch** to enable/disable bionic reading on the current page
+2. **Toggle the switch** to enable/disable bionic preview on the current page
 3. **Adjust settings**:
    - **Fixation Point**: How many characters are emphasized (1-5)
    - **Dim Opacity**: Opacity of non-emphasized text (10-90%)
@@ -43,11 +43,11 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 
 ## Keyboard Shortcuts
 (Optional - configure in `chrome://extensions/shortcuts`)
-- `Ctrl+Shift+B` / `Cmd+Shift+B` - Toggle bionic reading
+- `Ctrl+Shift+B` / `Cmd+Shift+B` - Toggle bionic preview
 
-## How Bionic Reading Works
+## How Bionic Text Works
 
-Bionic reading is a reading method that guides the eye through text by bolding the beginning of words. This creates artificial fixation points that help the brain complete words more quickly, potentially improving reading speed and comprehension.
+Bionic text highlighting is a reading method that guides the eye through text by bolding the beginning of words. This creates artificial fixation points that help the brain complete words more quickly, potentially improving reading speed and comprehension.
 
 Example:
 - Normal: "The quick brown fox jumps over the lazy dog"
@@ -68,7 +68,7 @@ chrome-bionic-preview/
 ├── background/
 │   └── service-worker.js  # Background service worker
 ├── lib/
-│   ├── bionic.js          # Bionic reading implementation
+│   ├── bionic.js          # Bionic text implementation
 │   ├── gradient.js        # Gradient reading implementation
 │   └── markdown.js        # Markdown parser
 └── icons/
@@ -118,7 +118,7 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 - No analytics or tracking
 - No user accounts required
 
-This extension only accesses webpage content when you explicitly enable it, solely to apply the bionic reading transformation.
+This extension only accesses webpage content when you explicitly enable it, solely to apply the bionic preview transformation.
 
 ## License
 

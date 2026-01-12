@@ -1,5 +1,5 @@
 /**
- * Bionic Markdown Preview - Content Styles
+ * Bionic Preview - Content Styles
  */
 
 /* CSS Variables */
@@ -8,7 +8,7 @@
   --gradient-color: inherit;
 }
 
-/* Bionic reading styles */
+/* Bionic preview styles */
 .bionic-bold {
   font-weight: 700;
 }

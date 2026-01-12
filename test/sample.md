@@ -1,10 +1,10 @@
 # Sample Markdown Test
 
-This is a **test file** for the Bionic Markdown Preview extension.
+This is a **test file** for the Bionic Preview extension.
 
 ## Features to Test
 
-1. **Bionic reading** - Check that word beginnings are bolded
+1. **Bionic preview** - Check that word beginnings are bolded
 2. *Italic text* - Should render properly
 3. ~~Strikethrough~~ - Should show with line through
 
