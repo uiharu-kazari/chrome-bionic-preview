@@ -153,6 +153,14 @@ function updateGradientPreview(theme) {
 function handleToggle() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
+      // Check if we're on a restricted URL
+      const url = tabs[0].url || '';
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:')) {
+        enableToggle.checked = false;
+        alert('Cannot run on this page. Please try on a regular website.');
+        return;
+      }
+
       chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (response) => {
         if (chrome.runtime.lastError) {
           // Content script not loaded, inject it first
