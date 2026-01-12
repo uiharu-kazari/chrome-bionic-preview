@@ -1,5 +1,5 @@
 /**
- * Bionic Markdown Preview - Popup Script
+ * Bionic Preview - Popup Script
  */
 
 // Gradient theme colors for preview

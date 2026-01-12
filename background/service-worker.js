@@ -1,5 +1,5 @@
 /**
- * Bionic Markdown Preview - Background Service Worker
+ * Bionic Preview - Background Service Worker
  */
 
 // Default settings
