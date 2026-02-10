@@ -22,7 +22,7 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 ## Installation
 
 ### From Chrome Web Store
-(Coming soon)
+Not yet available on Chrome Web Store. Use manual installation below.
 
 ### Manual Installation (Developer Mode)
 1. Download or clone this repository
