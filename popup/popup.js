@@ -193,7 +193,7 @@ function handleToggle() {
           // Content script not loaded, inject it first
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            files: ['content/content.js']
+            files: ['lib/katex.min.js', 'content/content.js']
           }).then(() => {
             chrome.scripting.insertCSS({
               target: { tabId: tabs[0].id },

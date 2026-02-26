@@ -116,8 +116,13 @@
    */
   function processBionicElement(element, fixationPoint, dimOpacity) {
     const skipTags = ['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'SVG', 'MATH', 'KBD', 'SAMP'];
+    const skipClasses = ['math-inline', 'math-display'];
 
     if (skipTags.includes(element.tagName)) {
+      return;
+    }
+
+    if (skipClasses.some(cls => element.classList && element.classList.contains(cls))) {
       return;
     }
 
@@ -139,7 +144,7 @@
             return NodeFilter.FILTER_REJECT;
           }
 
-          if (parent.closest('.bionic-wrapper')) {
+          if (parent.closest('.bionic-wrapper') || parent.closest('.math-inline') || parent.closest('.math-display')) {
             return NodeFilter.FILTER_REJECT;
           }
 
@@ -298,12 +303,92 @@
   }
 
   /**
+   * Extract math expressions from markdown and replace with placeholders.
+   * Renders math with KaTeX (MathML output) if available.
+   */
+  function extractMathFromMarkdown(text) {
+    const mathBlocks = [];
+    let processed = text;
+
+    // Protect code blocks and inline code from math extraction
+    const codeProtections = [];
+
+    processed = processed.replace(/```[\s\S]*?```/g, (match) => {
+      const placeholder = '\x00CODEPROTECT' + codeProtections.length + '\x00';
+      codeProtections.push({ placeholder, original: match });
+      return placeholder;
+    });
+
+    processed = processed.replace(/`[^`]+`/g, (match) => {
+      const placeholder = '\x00CODEPROTECT' + codeProtections.length + '\x00';
+      codeProtections.push({ placeholder, original: match });
+      return placeholder;
+    });
+
+    // Display math: $$...$$
+    processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+      const id = 'MATHBLOCK' + mathBlocks.length + 'ENDMATH';
+      mathBlocks.push({ id, math: math.trim(), display: true });
+      return id;
+    });
+
+    // Inline math: $...$ (no newlines, no leading/trailing spaces)
+    processed = processed.replace(/(?<![\\$])\$(?!\s)([^\$\n]+?)(?<!\s)\$(?!\$)/g, (_, math) => {
+      const id = 'MATHBLOCK' + mathBlocks.length + 'ENDMATH';
+      mathBlocks.push({ id, math: math.trim(), display: false });
+      return id;
+    });
+
+    // Restore code blocks
+    for (const { placeholder, original } of codeProtections) {
+      processed = processed.replace(placeholder, original);
+    }
+
+    return { processed, mathBlocks };
+  }
+
+  /**
+   * Replace math placeholders with rendered HTML
+   */
+  function restoreMathInHtml(html, mathBlocks) {
+    let result = html;
+    for (const block of mathBlocks) {
+      let rendered;
+      if (typeof katex !== 'undefined') {
+        try {
+          rendered = katex.renderToString(block.math, {
+            displayMode: block.display,
+            throwOnError: false,
+            output: 'mathml',
+          });
+        } catch (e) {
+          rendered = '<code>' + escapeHtml(block.math) + '</code>';
+        }
+      } else {
+        rendered = '<code>' + escapeHtml(block.math) + '</code>';
+      }
+
+      const wrapper = block.display
+        ? '<div class="math-display">' + rendered + '</div>'
+        : '<span class="math-inline">' + rendered + '</span>';
+
+      // Display math may be wrapped in <p> tags
+      result = result.replace('<p>' + block.id + '</p>', wrapper);
+      result = result.replace(block.id, wrapper);
+    }
+    return result;
+  }
+
+  /**
    * Parse markdown to HTML
    */
   function parseMarkdown(markdown) {
     if (!markdown) return '';
 
-    let html = markdown;
+    // Extract math expressions before processing
+    const { processed: mathProcessed, mathBlocks } = extractMathFromMarkdown(markdown);
+
+    let html = mathProcessed;
     html = html.replace(/\r\n/g, '\n');
 
     // Code blocks
@@ -355,6 +440,9 @@
 
     // Paragraphs
     html = wrapParagraphs(html);
+
+    // Restore math expressions with rendered HTML
+    html = restoreMathInHtml(html, mathBlocks);
 
     return html;
   }
