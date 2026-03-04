@@ -115,7 +115,7 @@
    * Process an element with bionic preview
    */
   function processBionicElement(element, fixationPoint, dimOpacity) {
-    const skipTags = ['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'SVG', 'MATH', 'KBD', 'SAMP'];
+    const skipTags = ['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'INPUT', 'NOSCRIPT', 'SVG', 'svg', 'MATH', 'math', 'KBD', 'SAMP'];
     const skipClasses = ['math-inline', 'math-display'];
 
     if (skipTags.includes(element.tagName)) {
@@ -313,7 +313,7 @@
     // Protect code blocks and inline code from math extraction
     const codeProtections = [];
 
-    processed = processed.replace(/```[\s\S]*?```/g, (match) => {
+    processed = processed.replace(/(?:```|~~~)[\s\S]*?(?:```|~~~)/g, (match) => {
       const placeholder = '\x00CODEPROTECT' + codeProtections.length + '\x00';
       codeProtections.push({ placeholder, original: match });
       return placeholder;
@@ -332,16 +332,16 @@
       return id;
     });
 
-    // Inline math: $...$ (no newlines, no leading/trailing spaces)
-    processed = processed.replace(/(?<![\\$])\$(?!\s)([^\$\n]+?)(?<!\s)\$(?!\$)/g, (_, math) => {
+    // Inline math: $...$ (no newlines, no leading/trailing spaces, must contain a letter)
+    processed = processed.replace(/(?<![\\$])\$(?!\s)([^\$\n]*[a-zA-Z\\][^\$\n]*?)(?<!\s)\$(?!\$)/g, (_, math) => {
       const id = 'MATHBLOCK' + mathBlocks.length + 'ENDMATH';
       mathBlocks.push({ id, math: math.trim(), display: false });
       return id;
     });
 
-    // Restore code blocks
+    // Restore code blocks (function replacement avoids $ special patterns)
     for (const { placeholder, original } of codeProtections) {
-      processed = processed.replace(placeholder, original);
+      processed = processed.replace(placeholder, () => original);
     }
 
     return { processed, mathBlocks };
@@ -372,9 +372,9 @@
         ? '<div class="math-display">' + rendered + '</div>'
         : '<span class="math-inline">' + rendered + '</span>';
 
-      // Display math may be wrapped in <p> tags
-      result = result.replace('<p>' + block.id + '</p>', wrapper);
-      result = result.replace(block.id, wrapper);
+      // Display math may be wrapped in <p> tags (function replacement avoids $ special patterns)
+      result = result.replace('<p>' + block.id + '</p>', function() { return wrapper; });
+      result = result.replace(block.id, function() { return wrapper; });
     }
     return result;
   }
