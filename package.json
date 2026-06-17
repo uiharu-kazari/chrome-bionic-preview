@@ -1,0 +1,14 @@
+{
+  "name": "chrome-bionic-preview",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Chrome extension for bionic reading and gradient reading on any webpage",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0",
+    "vitest": "^2.1.9"
+  }
+}
