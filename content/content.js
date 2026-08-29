@@ -17,6 +17,7 @@
   };
   let originalContent = null;
   let isMarkdownFile = false;
+  let initializationPromise = null;
 
   /**
    * Check if the current page is a raw markdown file
@@ -289,12 +290,24 @@
       el.classList.add('gradient-text');
       colorIndex++;
     });
+
+    // Some sites use only divs and spans. Ensure a selected theme is still
+    // visible when there are no paragraph-like elements to colour.
+    if (colorIndex === 0 && element.textContent.trim()) {
+      element.style.setProperty('--gradient-color', hslToString(colors[0]));
+      element.classList.add('gradient-text');
+    }
   }
 
   /**
    * Remove gradient from element
    */
   function removeGradient(element) {
+    if (element.classList.contains('gradient-text')) {
+      element.style.removeProperty('--gradient-color');
+      element.classList.remove('gradient-text');
+    }
+
     const gradientElements = element.querySelectorAll('.gradient-text');
     gradientElements.forEach(el => {
       el.style.removeProperty('--gradient-color');
@@ -559,6 +572,46 @@
   }
 
   /**
+   * Remove executable markup and unsafe URLs from rendered Markdown.
+   * Raw Markdown can come from an untrusted remote origin, so it must not gain
+   * script execution merely because the extension turns it into HTML.
+   */
+  function sanitizeRenderedContent(root) {
+    const blockedSelector = 'script, iframe, object, embed, form, input, button, textarea, select, meta, link, base';
+    root.querySelectorAll(blockedSelector).forEach(element => element.remove());
+
+    root.querySelectorAll('*').forEach(element => {
+      Array.from(element.attributes).forEach(attribute => {
+        const name = attribute.name.toLowerCase();
+
+        if (name.startsWith('on') || name === 'style' || name === 'srcdoc') {
+          element.removeAttribute(attribute.name);
+          return;
+        }
+
+        if (name === 'href' || name === 'src' || name === 'xlink:href') {
+          try {
+            const url = new URL(attribute.value, document.baseURI);
+            const allowedProtocols = name === 'href'
+              ? ['http:', 'https:', 'mailto:', 'tel:']
+              : ['http:', 'https:'];
+
+            if (!allowedProtocols.includes(url.protocol)) {
+              element.removeAttribute(attribute.name);
+            }
+          } catch {
+            element.removeAttribute(attribute.name);
+          }
+        }
+      });
+
+      if (element.tagName === 'A' && element.getAttribute('target') === '_blank') {
+        element.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+  }
+
+  /**
    * Transform markdown file into rendered preview
    */
   function transformMarkdownFile() {
@@ -579,6 +632,7 @@
         ${htmlContent}
       </article>
     `;
+    sanitizeRenderedContent(container);
 
     // Replace body content
     document.body.innerHTML = '';
@@ -664,51 +718,65 @@
 
   // Initialize
   function init() {
+    if (initializationPromise) {
+      return initializationPromise;
+    }
+
     isMarkdownFile = checkIfMarkdownFile();
 
-    // Load saved state and settings
-    chrome.storage.local.get(['isEnabled', 'settings'], (result) => {
-      if (result.settings) {
-        settings = { ...settings, ...result.settings };
-      }
+    // Messages may arrive immediately after chrome.scripting.executeScript.
+    // Keep them behind this promise so the saved settings are never overwritten
+    // by a late storage callback.
+    initializationPromise = new Promise((resolve) => {
+      chrome.storage.local.get(['isEnabled', 'settings'], (result) => {
+        if (result.settings) {
+          settings = { ...settings, ...result.settings };
+        }
 
-      // Auto-enable for markdown files if setting is on
-      if (isMarkdownFile && settings.autoMarkdown) {
-        isEnabled = true;
-        applyBionicReading();
-      } else if (result.isEnabled) {
-        isEnabled = true;
-        applyBionicReading();
-      }
+        // Auto-enable for markdown files if setting is on
+        if (isMarkdownFile && settings.autoMarkdown) {
+          isEnabled = true;
+          applyBionicReading();
+        } else if (result.isEnabled) {
+          isEnabled = true;
+          applyBionicReading();
+        }
+
+        resolve();
+      });
     });
+
+    return initializationPromise;
   }
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    switch (message.type) {
-      case 'toggle':
-        const newState = toggle();
-        sendResponse({ isEnabled: newState });
-        break;
+    init().then(() => {
+      switch (message.type) {
+        case 'toggle':
+          const newState = toggle();
+          sendResponse({ isEnabled: newState });
+          break;
 
-      case 'updateSettings':
-        updateSettings(message.settings);
-        sendResponse({ success: true });
-        break;
+        case 'updateSettings':
+          updateSettings(message.settings);
+          sendResponse({ success: true });
+          break;
 
-      case 'getState':
-        sendResponse({
-          isEnabled,
-          settings,
-          isMarkdownFile
-        });
-        break;
+        case 'getState':
+          sendResponse({
+            isEnabled,
+            settings,
+            isMarkdownFile
+          });
+          break;
 
-      default:
-        sendResponse({ error: 'Unknown message type' });
-    }
+        default:
+          sendResponse({ error: 'Unknown message type' });
+      }
+    });
 
-    return true; // Keep channel open for async response
+    return true; // Keep channel open while initialization completes.
   });
 
   // Initialize when DOM is ready

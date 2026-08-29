@@ -96,4 +96,15 @@ describe('GradientReader.applyGradient / removeGradient', () => {
       expect(p.style.getPropertyValue('--gradient-color')).toBe('');
     });
   });
+
+  it('applies and removes a fallback colour on text-only layouts', () => {
+    const el = root('<div>plain text</div>');
+    GradientReader.applyGradient(el, 'ocean');
+    expect(el.classList.contains('gradient-text')).toBe(true);
+    expect(el.style.getPropertyValue('--gradient-color')).toMatch(/^hsl\(/);
+
+    GradientReader.removeGradient(el);
+    expect(el.classList.contains('gradient-text')).toBe(false);
+    expect(el.style.getPropertyValue('--gradient-color')).toBe('');
+  });
 });

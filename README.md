@@ -10,12 +10,12 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 - **Dim opacity control** - Adjust the visibility of non-emphasized text
 
 ### Gradient Reading
-- **11 color themes** - Ocean, Sunset, Forest, Berry, Lavender, Autumn, Mint, Twilight, Coffee, Monochrome
+- **10 color themes** - Ocean, Sunset, Forest, Berry, Lavender, Autumn, Mint, Twilight, Coffee, Monochrome
 - **Automatic theme adaptation** - Colors adjust for light and dark mode
 - **Line-by-line coloring** - Different colors for different paragraphs aid visual tracking
 
 ### Markdown Preview
-- **Auto-render markdown files** - Automatically renders `.md` files with beautiful formatting
+- **Markdown file rendering** - Formats raw `.md` content when Bionic Preview is activated
 - **Full markdown support** - Headers, lists, code blocks, tables, links, images, and more
 - **Dark mode support** - Adapts to your system color scheme
 
@@ -39,11 +39,10 @@ Not yet available on Chrome Web Store. Use manual installation below.
    - **Fixation Point**: How many characters are emphasized (1-5)
    - **Dim Opacity**: Opacity of non-emphasized text (10-90%)
    - **Gradient Theme**: Choose a color theme or "None" to disable
-   - **Auto-render Markdown**: Automatically render markdown files
+   - **Render Markdown files**: Convert raw Markdown into a formatted preview
 
-## Keyboard Shortcuts
-(Optional - configure in `chrome://extensions/shortcuts`)
-- `Ctrl+Shift+B` / `Cmd+Shift+B` - Toggle bionic preview
+Fixation point, opacity, and gradient-theme changes take effect immediately on
+the current page.
 
 ## How Bionic Text Works
 
@@ -57,7 +56,11 @@ Example:
 
 ```
 chrome-bionic-preview/
+├── CHANGELOG.md           # Release notes
 ├── manifest.json           # Extension manifest (v3)
+├── package.json            # Test commands and development dependencies
+├── playwright.config.cjs   # Chromium end-to-end test configuration
+├── vitest.config.mjs       # Unit and integration test configuration
 ├── popup/
 │   ├── popup.html         # Settings popup UI
 │   ├── popup.css          # Popup styles
@@ -71,6 +74,8 @@ chrome-bionic-preview/
 │   ├── bionic.js          # Bionic text implementation
 │   ├── gradient.js        # Gradient reading implementation
 │   └── markdown.js        # Markdown parser
+├── e2e/                   # Playwright extension tests
+├── test/                  # Vitest unit and integration tests
 └── icons/
     ├── icon16.png
     ├── icon32.png
@@ -82,18 +87,32 @@ chrome-bionic-preview/
 
 ### Prerequisites
 - Chrome browser
+- Node.js 20.19 or newer (or Node.js 22.12+) for automated tests
 - Basic knowledge of Chrome extension development
 
 ### Testing
-1. Make changes to the code
-2. Go to `chrome://extensions/`
-3. Click the refresh icon on the extension card
-4. Test on any webpage or markdown file
+Install dependencies and the test browser once with `npm install` and
+`npx playwright install chromium`, then run:
+
+```bash
+npm test          # unit and integration tests
+npm run test:e2e  # real Chromium extension test
+npm run test:all  # both suites
+```
+
+For manual testing, go to `chrome://extensions/`, click the refresh icon on
+the extension card, then test on a webpage or Markdown file.
 
 ### Building for Production
-The extension is ready to use as-is. For publishing to the Chrome Web Store:
-1. Zip all files in the `chrome-bionic-preview` folder
-2. Upload to the Chrome Web Store Developer Dashboard
+The extension is ready to use as-is. For publishing to the Chrome Web Store,
+create a ZIP containing only the runtime files, then upload it in the Developer
+Dashboard:
+
+```bash
+zip -r bionic-preview.zip manifest.json background content icons popup \
+  lib/katex.min.js \
+  -x '*.DS_Store'
+```
 
 ## Also Available On
 
@@ -108,6 +127,8 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 - [VS Code Extension](https://github.com/uiharu-kazari/vscode-bionic-markdown-preview)
 - [Chrome Extension](https://github.com/uiharu-kazari/chrome-bionic-preview)
 
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
 ## Privacy Policy
 
 **Bionic Preview does not collect, store, or transmit any personal data.**
@@ -118,7 +139,8 @@ The extension is ready to use as-is. For publishing to the Chrome Web Store:
 - No analytics or tracking
 - No user accounts required
 
-This extension only accesses webpage content when you explicitly enable it, solely to apply the bionic preview transformation.
+This extension accesses the current page only after you click its toolbar icon,
+solely to detect or render Markdown and apply the selected reading effects.
 
 ## License
 
