@@ -27,6 +27,7 @@ let gradientTheme;
 let gradientPreview;
 let autoMarkdown;
 let markdownIndicator;
+let contentScriptInjection;
 
 // Current state
 let currentState = {
@@ -98,24 +99,68 @@ function getCurrentState() {
       // Page is accessible, enable the toggle
       enableToggle.disabled = false;
 
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'getState' }, (response) => {
-        if (chrome.runtime.lastError) {
-          // Content script not loaded, use stored settings
+      ensureContentScript(tabs[0].id)
+        .then(updateCurrentState)
+        .catch(() => {
+          // The active tab may have become restricted while the popup was open.
           loadStoredSettings();
-          return;
-        }
-
-        if (response) {
-          currentState = {
-            isEnabled: response.isEnabled || false,
-            isMarkdownFile: response.isMarkdownFile || false,
-            settings: response.settings || currentState.settings
-          };
-          updateUI();
-        }
-      });
+        });
     }
   });
+}
+
+/**
+ * Send a message to the active page and surface the missing-listener error.
+ */
+function sendMessage(tabId, message) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      resolve(response);
+    });
+  });
+}
+
+/**
+ * Inject the content script on demand, then wait until it can return state.
+ *
+ * The extension uses activeTab instead of a persistent all-pages content
+ * script. Without this handshake, the popup can display saved settings while
+ * there is no listener in the newly opened page to apply them.
+ */
+function ensureContentScript(tabId) {
+  return sendMessage(tabId, { type: 'getState' }).catch(() => {
+    if (!contentScriptInjection) {
+      contentScriptInjection = chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['lib/katex.min.js', 'content/content.js']
+      }).then(() => chrome.scripting.insertCSS({
+        target: { tabId },
+        files: ['content/content.css']
+      })).finally(() => {
+        contentScriptInjection = null;
+      });
+    }
+
+    return contentScriptInjection.then(() => sendMessage(tabId, { type: 'getState' }));
+  });
+}
+
+/**
+ * Reflect the content script's actual state in the popup.
+ */
+function updateCurrentState(response) {
+  if (!response) return;
+
+  currentState = {
+    isEnabled: response.isEnabled || false,
+    isMarkdownFile: response.isMarkdownFile || false,
+    settings: response.settings || currentState.settings
+  };
+  updateUI();
 }
 
 /**
@@ -188,39 +233,20 @@ function handleToggle() {
         return;
       }
 
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (response) => {
-        if (chrome.runtime.lastError) {
-          // Content script not loaded, inject it first
-          chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            files: ['lib/katex.min.js', 'content/content.js']
-          }).then(() => {
-            chrome.scripting.insertCSS({
-              target: { tabId: tabs[0].id },
-              files: ['content/content.css']
-            });
-            // After injection, toggle again
-            setTimeout(() => {
-              chrome.tabs.sendMessage(tabs[0].id, { type: 'toggle' }, (res) => {
-                if (res) {
-                  currentState.isEnabled = res.isEnabled;
-                  enableToggle.checked = res.isEnabled;
-                }
-              });
-            }, 100);
-          }).catch(err => {
-            // Silently fail - likely a restricted page
-            enableToggle.checked = false;
-          });
-          return;
-        }
-
-        if (response) {
-          currentState.isEnabled = response.isEnabled;
-          // Sync toggle visual with actual state
-          enableToggle.checked = response.isEnabled;
-        }
-      });
+      sendMessage(tabs[0].id, { type: 'toggle' })
+        .catch(() => ensureContentScript(tabs[0].id)
+          .then(() => sendMessage(tabs[0].id, { type: 'toggle' })))
+        .then((response) => {
+          if (response) {
+            currentState.isEnabled = response.isEnabled;
+            // Sync toggle visual with actual state
+            enableToggle.checked = response.isEnabled;
+          }
+        })
+        .catch(() => {
+          // Silently fail if the tab became restricted or was closed.
+          enableToggle.checked = false;
+        });
     }
   });
 }
@@ -267,22 +293,24 @@ function handleAutoMarkdownChange() {
  * Send settings update to content script
  */
 function sendSettingsUpdate() {
+  // Persist first so a just-injected content script initializes with this value.
+  chrome.storage.local.set({ settings: currentState.settings });
+
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
-      chrome.tabs.sendMessage(tabs[0].id, {
+      const updateMessage = {
         type: 'updateSettings',
         settings: currentState.settings
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          // Just save to storage if content script not available
-          chrome.storage.local.set({ settings: currentState.settings });
-        }
-      });
+      };
+
+      sendMessage(tabs[0].id, updateMessage)
+        .catch(() => ensureContentScript(tabs[0].id)
+          .then(() => sendMessage(tabs[0].id, updateMessage)))
+        .catch(() => {
+          // Storage already contains the setting for a tab that cannot be injected.
+        });
     }
   });
-
-  // Also save to storage
-  chrome.storage.local.set({ settings: currentState.settings });
 }
 
 // Initialize when DOM is ready

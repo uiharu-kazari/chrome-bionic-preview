@@ -19,6 +19,15 @@ describe('BionicReader.processWord', () => {
       .toBeGreaterThanOrEqual(boldLen(BionicReader.processWord('information', 1)));
   });
 
+  it('matches the production fixation formula at both slider extremes', () => {
+    expect(BionicReader.getBoldLength(12, 1)).toBe(2);
+    expect(BionicReader.getBoldLength(12, 5)).toBe(10);
+  });
+
+  it('does not wrap punctuation-only tokens as bionic text', () => {
+    expect(BionicReader.processWord('...', 3)).toBe('...');
+  });
+
   it('returns whitespace/empty input unchanged', () => {
     expect(BionicReader.processWord('   ', 3)).toBe('   ');
     expect(BionicReader.processWord('', 3)).toBe('');
@@ -63,6 +72,29 @@ describe('BionicReader.processElement / removeFromElement', () => {
     BionicReader.processElement(node, 3, 0.5);
     expect(node.querySelectorAll('.bionic-bold').length).toBe(0);
     expect(node.querySelector('code').textContent).toBe('const x = 1;');
+  });
+
+  it('does not process keyboard, sample-output, or rendered-math content', () => {
+    const node = el(`
+      <kbd>Command K</kbd>
+      <samp>done</samp>
+      <span class="math-inline">x + y</span>
+      <div class="math-display">z = 3</div>
+    `);
+    BionicReader.processElement(node, 3, 0.5);
+
+    expect(node.querySelectorAll('.bionic-bold')).toHaveLength(0);
+    expect(node.textContent).toContain('Command K');
+    expect(node.textContent).toContain('x + y');
+  });
+
+  it('does not wrap already processed text a second time', () => {
+    const node = el('<p>hello world</p>');
+    BionicReader.processElement(node, 3, 0.5);
+    BionicReader.processElement(node, 3, 0.5);
+
+    expect(node.querySelectorAll('.bionic-wrapper')).toHaveLength(1);
+    expect(node.querySelectorAll('.bionic-wrapper .bionic-wrapper')).toHaveLength(0);
   });
 
   it('round-trips: removeFromElement restores the original text', () => {
