@@ -10,7 +10,7 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 - **Dim opacity control** - Adjust the visibility of non-emphasized text
 
 ### Gradient Reading
-- **11 color themes** - Ocean, Sunset, Forest, Berry, Lavender, Autumn, Mint, Twilight, Coffee, Monochrome
+- **10 color themes** - Ocean, Sunset, Forest, Berry, Lavender, Autumn, Mint, Twilight, Coffee, Monochrome
 - **Automatic theme adaptation** - Colors adjust for light and dark mode
 - **Line-by-line coloring** - Different colors for different paragraphs aid visual tracking
 
@@ -41,6 +41,9 @@ Not yet available on Chrome Web Store. Use manual installation below.
    - **Gradient Theme**: Choose a color theme or "None" to disable
    - **Render Markdown files**: Convert raw Markdown into a formatted preview
 
+Fixation point, opacity, and gradient-theme changes take effect immediately on
+the current page.
+
 ## How Bionic Text Works
 
 Bionic text highlighting is a reading method that guides the eye through text by bolding the beginning of words. This creates artificial fixation points that help the brain complete words more quickly, potentially improving reading speed and comprehension.
@@ -53,7 +56,11 @@ Example:
 
 ```
 chrome-bionic-preview/
+├── CHANGELOG.md           # Release notes
 ├── manifest.json           # Extension manifest (v3)
+├── package.json            # Test commands and development dependencies
+├── playwright.config.cjs   # Chromium end-to-end test configuration
+├── vitest.config.mjs       # Unit and integration test configuration
 ├── popup/
 │   ├── popup.html         # Settings popup UI
 │   ├── popup.css          # Popup styles
@@ -67,6 +74,8 @@ chrome-bionic-preview/
 │   ├── bionic.js          # Bionic text implementation
 │   ├── gradient.js        # Gradient reading implementation
 │   └── markdown.js        # Markdown parser
+├── e2e/                   # Playwright extension tests
+├── test/                  # Vitest unit and integration tests
 └── icons/
     ├── icon16.png
     ├── icon32.png
@@ -118,6 +127,8 @@ zip -r bionic-preview.zip manifest.json background content icons popup \
 - [VS Code Extension](https://github.com/uiharu-kazari/vscode-bionic-markdown-preview)
 - [Chrome Extension](https://github.com/uiharu-kazari/chrome-bionic-preview)
 
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
 ## Privacy Policy
 
 **Bionic Preview does not collect, store, or transmit any personal data.**
@@ -128,7 +139,8 @@ zip -r bionic-preview.zip manifest.json background content icons popup \
 - No analytics or tracking
 - No user accounts required
 
-This extension only accesses webpage content when you explicitly enable it, solely to apply the bionic preview transformation.
+This extension accesses the current page only after you click its toolbar icon,
+solely to detect or render Markdown and apply the selected reading effects.
 
 ## License
 
