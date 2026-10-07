@@ -76,7 +76,10 @@ function init() {
 function isRestrictedUrl(url) {
   // Treat empty, undefined, or null URLs as restricted (fail-safe)
   if (!url) return true;
-  return url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('edge://');
+  try {
+    const parsed = new URL(url);
+    return !['http:', 'https:', 'file:'].includes(parsed.protocol) || parsed.hostname === 'chromewebstore.google.com' || (parsed.hostname === 'chrome.google.com' && parsed.pathname.startsWith('/webstore'));
+  } catch { return true; }
 }
 
 /**
@@ -96,13 +99,14 @@ function getCurrentState() {
         return;
       }
 
-      // Page is accessible, enable the toggle
-      enableToggle.disabled = false;
+      // Enable only after the renderer actually answers.
+      enableToggle.disabled = true;
 
       ensureContentScript(tabs[0].id)
         .then(updateCurrentState)
         .catch(() => {
           // The active tab may have become restricted while the popup was open.
+          showPageError();
           loadStoredSettings();
         });
     }
@@ -136,7 +140,7 @@ function ensureContentScript(tabId) {
     if (!contentScriptInjection) {
       contentScriptInjection = chrome.scripting.executeScript({
         target: { tabId },
-        files: ['lib/katex.min.js', 'content/content.js']
+        files: ['lib/katex.min.js', 'lib/marked.umd.js', 'lib/purify.min.js', 'lib/markdown.js', 'lib/bionic.js', 'lib/gradient.js', 'content/content.js']
       }).then(() => chrome.scripting.insertCSS({
         target: { tabId },
         files: ['content/content.css']
@@ -160,20 +164,26 @@ function updateCurrentState(response) {
     isMarkdownFile: response.isMarkdownFile || false,
     settings: response.settings || currentState.settings
   };
+  enableToggle.disabled = false;
   updateUI();
+}
+
+function showPageError() {
+  currentState.isEnabled = false;
+  enableToggle.checked = false;
+  enableToggle.disabled = true;
+  document.querySelector('.footer-text').textContent = 'This page cannot be changed. Try a regular webpage, or allow file access in extension settings for local files.';
 }
 
 /**
  * Load settings from storage
  */
 function loadStoredSettings() {
-  chrome.storage.local.get(['isEnabled', 'settings'], (result) => {
+  chrome.storage.local.get(['settings'], (result) => {
     if (result.settings) {
       currentState.settings = { ...currentState.settings, ...result.settings };
     }
-    if (result.isEnabled !== undefined) {
-      currentState.isEnabled = result.isEnabled;
-    }
+    currentState.isEnabled = false;
     updateUI();
   });
 }
@@ -198,9 +208,8 @@ function updateUI() {
   autoMarkdown.checked = settings.autoMarkdown;
 
   // Show markdown indicator if applicable
-  if (currentState.isMarkdownFile) {
-    markdownIndicator.style.display = 'block';
-  }
+  markdownIndicator.style.display = currentState.isMarkdownFile ? 'block' : 'none';
+  if (!enableToggle.disabled) document.querySelector('.footer-text').textContent = currentState.isEnabled ? 'Reading effects are on for this page.' : 'Turn on reading effects for this page.';
 }
 
 /**
@@ -241,11 +250,11 @@ function handleToggle() {
             currentState.isEnabled = response.isEnabled;
             // Sync toggle visual with actual state
             enableToggle.checked = response.isEnabled;
+            updateUI();
           }
         })
         .catch(() => {
-          // Silently fail if the tab became restricted or was closed.
-          enableToggle.checked = false;
+          showPageError();
         });
     }
   });

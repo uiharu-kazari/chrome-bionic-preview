@@ -243,6 +243,12 @@
 }
 
 /* Smooth transitions */
-.bionic-reading-enabled * {
+.bionic-reading-enabled .bionic-dim {
   transition: opacity 0.2s ease;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .bionic-reading-enabled .bionic-dim { transition: none; }
+}
+
+.bionic-markdown-content table { display: block; overflow-x: auto; }

@@ -11,23 +11,23 @@
     <header class="popup-header">
       <h1>Bionic Preview</h1>
       <label class="toggle-switch">
-        <input type="checkbox" id="enableToggle">
+        <input type="checkbox" id="enableToggle" aria-label="Enable reading effects on this page">
         <span class="toggle-slider"></span>
       </label>
     </header>
 
     <main class="popup-content">
       <section class="setting-group">
-        <label class="setting-label">
+        <label class="setting-label" for="fixationPoint">
           <span class="label-text">Fixation Point</span>
           <span class="label-value" id="fixationValue">3</span>
         </label>
         <input type="range" id="fixationPoint" min="1" max="5" value="3" class="slider">
-        <p class="setting-description">How many characters are emphasized per word</p>
+        <p class="setting-description">Adjust how much of each word is emphasized</p>
       </section>
 
       <section class="setting-group">
-        <label class="setting-label">
+        <label class="setting-label" for="dimOpacity">
           <span class="label-text">Dim Opacity</span>
           <span class="label-value" id="opacityValue">50%</span>
         </label>
@@ -36,7 +36,7 @@
       </section>
 
       <section class="setting-group">
-        <label class="setting-label">
+        <label class="setting-label" for="gradientTheme">
           <span class="label-text">Gradient Theme</span>
         </label>
         <select id="gradientTheme" class="select">
@@ -65,7 +65,7 @@
     </main>
 
     <footer class="popup-footer">
-      <p class="footer-text">Click the toggle to enable bionic preview on this page</p>
+      <p class="footer-text" role="status" aria-live="polite">Click the toggle to enable bionic preview on this page</p>
       <p class="markdown-indicator" id="markdownIndicator" style="display: none;">
         Markdown file detected
       </p>

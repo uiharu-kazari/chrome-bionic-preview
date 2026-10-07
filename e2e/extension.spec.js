@@ -60,6 +60,11 @@ function createTestExtension() {
 
 test.beforeAll(async () => {
   fixtureServer = createServer((request, response) => {
+    if (request.url === '/example.md') {
+      response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('# Markdown fixture\n\n| Name | Value |\n| --- | --- |\n| Reader | ready |\n\n~~~text\n**literal**\n$x$\n~~~\n\nInline $x^2$.\n\n<svg><a href="https://example.com"><animate attributeName="href" values="javascript:alert(1)" /></a></svg>');
+      return;
+    }
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     response.end(`<!doctype html>
       <html>
@@ -108,6 +113,8 @@ test('popup controls update the active page and restore it when disabled', async
   await articlePage.goto(fixtureUrl);
 
   const popupPage = await browserContext.newPage();
+  await popupPage.setViewportSize({ width: 340, height: 640 });
+  await popupPage.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await popupPage.goto(`chrome-extension://${extensionId}/popup/popup.html`);
 
   // Keep the fixture tab active while the background popup page initializes.
@@ -142,9 +149,85 @@ test('popup controls update the active page and restore it when disabled', async
     .evaluate(element => element.style.getPropertyValue('--gradient-color')))
     .toMatch(/^hsl\(/);
 
+  mkdirSync(resolve('test-results/qa'), { recursive: true });
+  await popupPage.screenshot({ path: resolve('test-results/qa/chrome-popup-light.png'), fullPage: true });
+  await articlePage.screenshot({ path: resolve('test-results/qa/chrome-article-light.png'), fullPage: true });
+  await popupPage.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await popupPage.screenshot({ path: resolve('test-results/qa/chrome-popup-dark.png'), fullPage: true });
+
   await popupPage.locator('#enableToggle').evaluate(toggle => toggle.click());
   await expect(articlePage.locator('#target .bionic-wrapper')).toHaveCount(0);
   await expect(articlePage.locator('#target')).toHaveText(
     'Readability controls update this paragraph immediately.'
   );
+});
+
+
+test('effects protect editors and diagrams, include new content, and stay scoped to a page', async () => {
+  const page = await browserContext.newPage();
+  await page.goto(fixtureUrl);
+  await page.evaluate(() => {
+    const protectedContent = document.createElement('div');
+    protectedContent.innerHTML = '<div contenteditable="true"><p>editable draft</p></div><pre><code><span>literal code</span></code></pre><svg><text>diagram text</text></svg><math><mtext>formula label</mtext></math>';
+    document.body.appendChild(protectedContent);
+  });
+  const popup = await browserContext.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+  await page.bringToFront();
+  await popup.reload();
+  await expect(popup.getByRole('checkbox', { name: 'Enable reading effects on this page' })).toBeEnabled();
+  await popup.locator('#enableToggle').evaluate(toggle => toggle.click());
+  await expect(page.locator('#target .bionic-wrapper')).not.toHaveCount(0);
+  await expect(page.locator('[contenteditable] .bionic-wrapper, pre .bionic-wrapper, svg .bionic-wrapper, math .bionic-wrapper')).toHaveCount(0);
+  await page.evaluate(() => {
+    const paragraph = document.createElement('p');
+    paragraph.id = 'dynamic';
+    paragraph.textContent = 'Newly inserted readable content';
+    document.body.appendChild(paragraph);
+  });
+  await expect(page.locator('#dynamic .bionic-bold')).not.toHaveCount(0);
+
+  const secondPage = await browserContext.newPage();
+  await secondPage.goto(fixtureUrl);
+  await secondPage.bringToFront();
+  await popup.reload();
+  await expect(popup.locator('#enableToggle')).toBeEnabled();
+  await expect(popup.locator('#enableToggle')).not.toBeChecked();
+  await expect(secondPage.locator('.bionic-wrapper')).toHaveCount(0);
+  await expect(page.locator('#dynamic .bionic-bold')).not.toHaveCount(0);
+  await page.close();
+  await secondPage.close();
+  await popup.close();
+});
+
+test('raw Markdown renders tables and math safely and restores original node identity', async () => {
+  const page = await browserContext.newPage();
+  await page.goto(fixtureUrl.replace('/article', '/example.md'));
+  await page.evaluate(() => {
+    window.originalPre = document.querySelector('pre');
+    window.originalPre.addEventListener('click', () => { window.originalClicked = true; });
+  });
+  const popup = await browserContext.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+  await page.bringToFront();
+  await popup.reload();
+  await expect(popup.locator('#enableToggle')).toBeEnabled();
+  await expect(popup.locator('#enableToggle')).toBeChecked();
+  await expect(page.locator('.bionic-markdown-content table td')).toHaveCount(2);
+  await expect(page.locator('pre code')).toHaveText('**literal**\n$x$\n');
+  await expect(page.locator('.math-inline math')).toHaveCount(1);
+  await expect(page.locator('svg, script')).toHaveCount(0);
+  await page.setViewportSize({ width: 960, height: 900 });
+  await page.screenshot({ path: resolve('test-results/qa/chrome-markdown-light.png'), fullPage: true });
+  const lightColor = await page.locator('.bionic-markdown-content h1').evaluate(el => el.style.getPropertyValue('--gradient-color'));
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.locator('.bionic-markdown-content h1').evaluate(el => el.style.getPropertyValue('--gradient-color'))).not.toBe(lightColor);
+  await page.screenshot({ path: resolve('test-results/qa/chrome-markdown-dark.png'), fullPage: true });
+  await popup.locator('#enableToggle').evaluate(toggle => toggle.click());
+  await expect(page.locator('.bionic-markdown-container')).toHaveCount(0);
+  expect(await page.evaluate(() => document.querySelector('pre') === window.originalPre)).toBe(true);
+  await page.locator('pre').click();
+  expect(await page.evaluate(() => window.originalClicked)).toBe(true);
+  await page.close();
+  await popup.close();
 });

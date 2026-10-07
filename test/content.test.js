@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import BionicReader from '../lib/bionic.js';
+import GradientReader from '../lib/gradient.js';
+import MarkdownParser from '../lib/markdown.js';
+
 const contentScript = readFileSync(resolve(process.cwd(), 'content/content.js'), 'utf8');
 
 function clone(value) {
@@ -12,7 +16,8 @@ function loadContentScript({
   storage,
   storageDelay = 0,
   html = '<div>reading</div>',
-  path = '/'
+  path = '/',
+  enableFixture = Boolean(storage.isEnabled)
 }) {
   window.history.replaceState({}, '', path);
   document.body.innerHTML = html;
@@ -42,14 +47,24 @@ function loadContentScript({
     }
   };
   globalThis.chrome = window.chrome;
+  window.BionicReader = BionicReader;
+  window.GradientReader = GradientReader;
+  window.MarkdownParser = MarkdownParser;
   window.eval(contentScript);
+  let fixtureInitialized = false;
 
   return {
-    send(message) {
-      return new Promise((resolveResponse) => {
+    async send(message) {
+      const deliver = message => new Promise(resolveResponse => {
         const handledAsync = messageListeners[0](message, {}, resolveResponse);
         expect(handledAsync).toBe(true);
       });
+      if (!fixtureInitialized) {
+        fixtureInitialized = true;
+        const initialState = await deliver({ type: 'getState' });
+        if (enableFixture && !initialState.isEnabled) await deliver({ type: 'toggle' });
+      }
+      return deliver(message);
     }
   };
 }
@@ -61,6 +76,7 @@ function boldLength() {
 afterEach(() => {
   window.history.replaceState({}, '', '/');
   document.body.innerHTML = '';
+  delete window.__bionicPreviewInstalled;
   delete window.chrome;
   delete globalThis.chrome;
 });
@@ -128,6 +144,7 @@ describe('content-script settings updates', () => {
 &lt;img src="https://example.com/image.png" onerror="window.pwned = true"&gt;
 &lt;script&gt;window.pwned = true&lt;/script&gt;
 &lt;a href="https://example.com/raw" target="_blank"&gt;raw link&lt;/a&gt;
+
 [unsafe](javascript:window.pwned=true)
 [safe](https://example.com/docs)</pre>`,
       storage: {
@@ -146,5 +163,20 @@ describe('content-script settings updates', () => {
     expect(document.querySelector('a[href="https://example.com/raw"]')?.getAttribute('rel'))
       .toBe('noopener noreferrer');
     expect(window.pwned).toBeUndefined();
+  });
+});
+
+
+describe('document state and settings bounds', () => {
+  it('ignores a legacy persisted enable state on a different ordinary page', async () => {
+    const page = loadContentScript({ storage: { isEnabled: true }, enableFixture: false });
+    const state = await page.send({ type: 'getState' });
+    expect(state.isEnabled).toBe(false);
+    expect(document.querySelector('.bionic-wrapper')).toBeNull();
+  });
+  it('clamps corrupt stored settings before applying them', async () => {
+    const page = loadContentScript({ storage: { settings: { fixationPoint: 99, dimOpacity: -10, gradientTheme: 'missing', autoMarkdown: 'yes' } } });
+    const state = await page.send({ type: 'getState' });
+    expect(state.settings).toEqual({ fixationPoint: 5, dimOpacity: 0.1, gradientTheme: 'none', autoMarkdown: true });
   });
 });

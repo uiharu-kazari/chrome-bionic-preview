@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { JSDOM } from 'jsdom';
 import { describe, expect, it, vi } from 'vitest';
 
 const popupScript = readFileSync(resolve(process.cwd(), 'popup/popup.js'), 'utf8');
@@ -94,7 +95,7 @@ describe('popup content-script handshake', () => {
 
     expect(injections).toEqual([{
       target: { tabId: 99 },
-      files: ['lib/katex.min.js', 'content/content.js']
+      files: ['lib/katex.min.js', 'lib/marked.umd.js', 'lib/purify.min.js', 'lib/markdown.js', 'lib/bionic.js', 'lib/gradient.js', 'content/content.js']
     }]);
     expect(cssInjections).toEqual([{
       target: { tabId: 99 },
@@ -110,5 +111,47 @@ describe('popup content-script handshake', () => {
 
     delete window.chrome;
     delete globalThis.chrome;
+  });
+});
+
+
+describe('popup unavailable-page state', () => {
+  it('keeps the toggle off on a restricted page even with a legacy enabled preference', () => {
+    const html = readFileSync(resolve(process.cwd(), 'popup/popup.html'), 'utf8');
+    const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://example.com' });
+    dom.window.chrome = {
+      tabs: { query: (query, callback) => callback([{ id: 1, url: 'chrome://extensions/' }]) },
+      storage: { local: { get: (keys, callback) => callback({ isEnabled: true, settings: { fixationPoint: 4 } }) } }
+    };
+    dom.window.eval(popupScript);
+    dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
+    const toggle = dom.window.document.getElementById('enableToggle');
+    expect(toggle.disabled).toBe(true);
+    expect(toggle.checked).toBe(false);
+    expect(dom.window.document.querySelector('.footer-text').textContent).toBe('Not available on this page');
+    expect(dom.window.isRestrictedUrl('https://chromewebstore.google.com/detail/example')).toBe(true);
+    expect(dom.window.isRestrictedUrl('https://example.com/article')).toBe(false);
+    expect(dom.window.isRestrictedUrl('data:text/html,example')).toBe(true);
+    dom.window.close();
+  });
+  it('shows a recovery message when file access is not granted', async () => {
+    const html = readFileSync(resolve(process.cwd(), 'popup/popup.html'), 'utf8');
+    const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'https://example.com' });
+    dom.window.chrome = {
+      runtime: { lastError: { message: 'No listener' } },
+      tabs: {
+        query: (query, callback) => callback([{ id: 1, url: 'file:///example.md' }]),
+        sendMessage: (tab, message, callback) => callback()
+      },
+      scripting: { executeScript: () => Promise.reject(new Error('File access denied')) },
+      storage: { local: { get: (keys, callback) => callback({ settings: { fixationPoint: 4 } }) } }
+    };
+    dom.window.eval(popupScript);
+    dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
+    await vi.waitFor(() => {
+      expect(dom.window.document.querySelector('.footer-text').textContent).toContain('allow file access');
+    });
+    expect(dom.window.document.getElementById('enableToggle').disabled).toBe(true);
+    dom.window.close();
   });
 });

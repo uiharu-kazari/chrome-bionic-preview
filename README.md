@@ -16,7 +16,7 @@ A Chrome extension that enhances reading experience with bionic text highlightin
 
 ### Markdown Preview
 - **Markdown file rendering** - Formats raw `.md` content when Bionic Preview is activated
-- **Full markdown support** - Headers, lists, code blocks, tables, links, images, and more
+- **Common Markdown and GFM support** - Headers, lists, code blocks, tables, links, images, and more
 - **Dark mode support** - Adapts to your system color scheme
 
 ## Installation
@@ -33,6 +33,8 @@ Not yet available on Chrome Web Store. Use manual installation below.
 
 ## Usage
 
+Reading effects are scoped to the current page. Settings are remembered across pages; ordinary pages start with effects off. Raw Markdown is rendered when you open the popup if “Render Markdown files” is enabled. Local files require “Allow access to file URLs” in Chrome’s extension settings. Chrome internal pages and the Chrome Web Store cannot be changed.
+
 1. **Click the extension icon** to open the settings popup
 2. **Toggle the switch** to enable/disable bionic preview on the current page
 3. **Adjust settings**:
@@ -46,7 +48,7 @@ the current page.
 
 ## How Bionic Text Works
 
-Bionic text highlighting is a reading method that guides the eye through text by bolding the beginning of words. This creates artificial fixation points that help the brain complete words more quickly, potentially improving reading speed and comprehension.
+Bionic text highlighting is a reading method that guides the eye through text by bolding the beginning of words. Some readers prefer these emphasis points for scanning prose. The effect is a personal reading preference; this extension does not claim a proven improvement in reading speed or comprehension.
 
 Example:
 - Normal: "The quick brown fox jumps over the lazy dog"
@@ -104,15 +106,23 @@ For manual testing, go to `chrome://extensions/`, click the refresh icon on
 the extension card, then test on a webpage or Markdown file.
 
 ### Building for Production
-The extension is ready to use as-is. For publishing to the Chrome Web Store,
-create a ZIP containing only the runtime files, then upload it in the Developer
-Dashboard:
+Runtime libraries are bundled locally and pinned in the lockfile. Regenerate them
+with `npm run vendor` after changing a runtime dependency. Prepare the runtime-only
+ZIP and a SHA-256 inventory with:
 
 ```bash
-zip -r bionic-preview.zip manifest.json background content icons popup \
-  lib/katex.min.js \
-  -x '*.DS_Store'
+npm ci
+npm run release:check
 ```
+
+The upload artifact is `dist/bionic-preview-0.2.3.zip`; the unpacked folder is
+`dist/bionic-preview-0.2.3/`. Packaging verifies the version and least-privilege
+manifest and excludes tests, dependencies, Git history and local reports.
+Upload this ZIP in the Chrome Web Store Developer Dashboard only after final
+review and approval. Store-account access, listing screenshots, disclosures and
+store review remain separate publication steps.
+
+Third-party licenses for Marked, DOMPurify and KaTeX are included in `lib/`.
 
 ## Also Available On
 
@@ -131,11 +141,12 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## Privacy Policy
 
-**Bionic Preview does not collect, store, or transmit any personal data.**
+**Bionic Preview does not collect document content or send it to a service.**
 
 - All processing happens locally in your browser
 - User preferences (fixation point, opacity, theme) are stored locally using Chrome's storage API
-- No data is sent to external servers
+- No document text or preferences are sent to a service by the extension
+- Markdown images may load from their source URLs when rendered, just like webpage images
 - No analytics or tracking
 - No user accounts required
 

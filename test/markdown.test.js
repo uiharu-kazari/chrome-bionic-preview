@@ -68,7 +68,9 @@ describe('MarkdownParser.parse — core syntax', () => {
   });
 
   it('renders blockquotes', () => {
-    expect(MarkdownParser.parse('> quote')).toContain('<blockquote>quote</blockquote>');
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('> quote');
+    expect(root.querySelector('blockquote').textContent.trim()).toBe('quote');
   });
 
   it('returns empty string for empty input', () => {
@@ -95,5 +97,40 @@ describe('MarkdownParser.isMarkdown', () => {
   it('returns false for plain prose and empty input', () => {
     expect(MarkdownParser.isMarkdown('just a normal sentence')).toBe(false);
     expect(MarkdownParser.isMarkdown('')).toBe(false);
+  });
+});
+
+
+describe('Markdown correctness and security regression corpus', () => {
+  it('keeps Markdown symbols, newlines, indentation and math literal inside fenced code', () => {
+    const code = '  **literal**\n# not a heading\n- not a list\n$x$\n';
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('~~~text\n' + code + '~~~');
+    expect(root.querySelector('pre code').textContent).toBe(code);
+    expect(root.querySelector('pre strong, pre h1, pre li, pre math')).toBeNull();
+  });
+  it('renders nested lists, reference links and aligned tables', () => {
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('- parent\n  - child\n\n[reference][docs]\n\n[docs]: https://example.com/docs\n\n|left|right|\n|:---|---:|\n|a|b|');
+    expect(root.querySelector('li ul li').textContent).toBe('child');
+    expect(root.querySelector('a').getAttribute('href')).toBe('https://example.com/docs');
+    expect(root.querySelectorAll('td')).toHaveLength(2);
+  });
+  it('preserves inline/display math and keeps inline code literal', () => {
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('Inline $x^2$ and `$x$`.\n\n$$\nx+y\n$$');
+    expect(root.querySelectorAll('math')).toHaveLength(2);
+    expect(root.querySelector('code').textContent).toBe('$x$');
+  });
+  it('removes SVG mutation, executable HTML, event handlers, dangerous URLs and CSS', () => {
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('<svg><a href="https://safe.test"><animate attributeName="href" values="javascript:alert(1)"/></a></svg>\n\n<script>alert(1)</script>\n\n<a href="javascript:alert(1)" onclick="alert(1)" style="background:url(https://tracking.test)">unsafe</a>\n\n<img src="data:image/svg+xml,bad" onerror="alert(1)">');
+    expect(root.querySelector('svg, script, [onclick], [onerror], [style], [src]')).toBeNull();
+    expect(root.querySelector('a').hasAttribute('href')).toBe(false);
+  });
+  it('does not trust HTML-producing math commands', () => {
+    const root = document.createElement('div');
+    root.innerHTML = MarkdownParser.parse('$\\href{javascript:alert(1)}{unsafe}$');
+    expect(root.querySelector('a[href]')).toBeNull();
   });
 });

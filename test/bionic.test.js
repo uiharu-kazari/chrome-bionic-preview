@@ -114,3 +114,14 @@ describe('BionicReader.processElement / removeFromElement', () => {
     expect(pre.querySelectorAll('.bionic-bold').length).toBe(0);
   });
 });
+
+
+describe('BionicReader protected DOM ancestors', () => {
+  it('leaves nested editable text, code children, SVG and MathML untouched', () => {
+    const root = document.createElement('div');
+    root.innerHTML = '<div contenteditable="true"><p><span>draft text</span></p></div><pre><code><span>literal code</span></code></pre><svg><text>diagram text</text></svg><math><mtext>math label</mtext></math><p>reading text</p>';
+    BionicReader.processElement(root);
+    expect(root.querySelectorAll('[contenteditable] .bionic-wrapper, pre .bionic-wrapper, svg .bionic-wrapper, math .bionic-wrapper')).toHaveLength(0);
+    expect(root.querySelectorAll('p:last-child .bionic-wrapper')).toHaveLength(1);
+  });
+});

@@ -24,3 +24,5 @@ test-results/
 
 # Generated files
 icons/generate-icons.js
+
+dist/
