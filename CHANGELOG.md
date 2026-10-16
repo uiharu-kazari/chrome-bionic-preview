@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 - 2026-10-17
+
+- Adopt the Split Studio identity across the toolbar icon and popup header.
+- Include an optically simplified 16px icon for small toolbar displays.
+
 ## 0.2.3 - 2026-10-08
 
 - Render GFM tables, nested lists and reference links while preserving literal code and math.
